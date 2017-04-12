@@ -28,8 +28,8 @@
 
         <Border x:Name="border" Background="AliceBlue" ClipToBounds="True" Grid.Column="0" Grid.Row="2">
             <Canvas x:Name="canvas" Background="Gray" >
-                <Image x:Name="content" Stretch="Fill" MouseMove="MainWindow_MouseMove"
-                   Width="{Binding ActualWidth, ElementName=canvas}" Height="{Binding ActualHeight,ElementName=canvas}"
+                <Image x:Name="content" Stretch="Fill" 
+                       Width="{Binding ActualWidth, ElementName=canvas}" Height="{Binding ActualHeight,ElementName=canvas}"
                    Source="g:\Sectionals\SaltLakeCitySEC94.tif">
                 </Image>
             </Canvas>

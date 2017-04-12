@@ -56,34 +56,13 @@ namespace PanAndZoom
             yScale = 1.0;
         }
 
-        public void pixel2coordinate(double xp, double yp, out double xc, out double yc)
-        {
-            xc = GeoTransform[0] + (xp * GeoTransform[1]);
-            yc = GeoTransform[3] + (yp * GeoTransform[5]);
-        }
 
-
-        // Does a transformation between display points and
-        /// raster points
-
-        public Point px2Map(Point dp, double displayWidth, double displayHeight)
-        {
-            double xScale = width / displayWidth;
-            double yScale = height / displayHeight;
-            return new Point(dp.X * xScale, dp.Y * yScale);
-        }
-
-        // Does a transformation between display points
+         // Does a transformation between display points
         // and east,north point in the rasters spatial
         // system
 
-        public Point px2coord(Point dp, double displayWidth, double displayHeight)
+        public Point px2coord(Point mp)
         {
-            // calculate scaling to go from display to raster
-            Point mp = new Point();
-            mp.X = dp.X * (this.width / displayWidth);
-            mp.Y = dp.Y * (this.height / displayHeight);
-
             Point v = new Point();
             v.X = GeoTransform[0] + (mp.X * GeoTransform[1]);
             v.Y = GeoTransform[3] + (mp.Y * GeoTransform[5]);
@@ -91,6 +70,7 @@ namespace PanAndZoom
             return v;
         }
 
+ 
         // Does a transformation from spatial reference system
         // to display x,y
 
@@ -103,21 +83,6 @@ namespace PanAndZoom
         }
 
         
-        public void coordinate2LatLon(double xc, double yc, out double lat, out double lon)
-        {
-            double[] p = new double[3];
-
-            p[0] = xc;
-            p[1] = yc;
-            p[2]  = 0;
-
-            toLatLon.TransformPoint(p);
-
-            lon = p[0];
-            lat = p[1];
-        }
-
-
         public GeoCoordinate coord2LatLon(Point p)
         {
             double[] points = new double[3];

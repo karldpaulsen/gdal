@@ -61,6 +61,7 @@ namespace PanAndZoom
             var st = GetScaleTransform(element);
             var tt = GetTranslateTransform(element);
 
+
             double zoom = delta > 0 ? .2 : -.2;
             if (!(delta > 0) && (st.ScaleX < .4 || st.ScaleY < .4))
                 return;
@@ -144,10 +145,6 @@ namespace PanAndZoom
             {
                 this.DisplayXY.Text = p.X.ToString("F0") + "," + p.Y.ToString("F0");
 
-                Point mp = raster.px2Map(p, canvas.ActualWidth, canvas.ActualHeight);
-                //Point mp = raster.px2Map(p, image.Width, image.Height);
-                this.MapXY.Text = mp.X.ToString("F0") + "," + mp.Y.ToString("F0");
-
                 if (canvas.IsMouseCaptured)
                 {
                     Vector v = start - p;
@@ -156,7 +153,13 @@ namespace PanAndZoom
                     this.TranslateXY.Text = tt.ToString();
                 }
 
-                Point c = raster.px2coord(p, canvas.ActualWidth, canvas.ActualHeight);
+                // Transform display x,y to map x,y
+                Point mp = new Point((p.X - tt.X) * (raster.width / (canvas.ActualWidth * st.ScaleX)), 
+                        (p.Y - tt.Y) * (raster.height / (canvas.ActualWidth * st.ScaleY)));
+                this.MapXY.Text = mp.X.ToString("F0") + "," + mp.Y.ToString("F0");
+
+
+                Point c = raster.px2coord(mp);
                 this.srsCoord.Text = c.X.ToString("F4") + "," + c.Y.ToString("F4");
 
                 this.Scale.Text = st.ScaleX.ToString("F1") + "," + st.ScaleY.ToString("F1");
@@ -168,21 +171,23 @@ namespace PanAndZoom
 
         private void MainWindow_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            double xs = canvas.ActualWidth / raster.width;
-            double ys = canvas.ActualHeight / raster.height;
+            var st = GetScaleTransform(canvas);
+            var tt = GetTranslateTransform(canvas);
 
-            Point p = e.GetPosition(canvas);
-            Point m = raster.px2Map(p, canvas.ActualWidth, canvas.ActualHeight);
-            Point c = raster.px2coord(p, canvas.ActualWidth, canvas.ActualHeight);
+            Point p = e.GetPosition(border);
+
+            // Transform display pixel coordinate to map coordinates
+            Point mp = new Point((p.X - tt.X) * (raster.width / (canvas.ActualWidth * st.ScaleX)),
+                    (p.Y - tt.Y) * (raster.height / (canvas.ActualWidth * st.ScaleY)));
+
+            Point c = raster.px2coord(mp);
+
             GeoCoordinate ll = raster.coord2LatLon(c);
 
-            double lat, lon;
-            raster.coordinate2LatLon(c.X, c.Y, out lat, out lon);
-
-            MessageBox.Show(
+             MessageBox.Show(
                 "Display: " + p.X.ToString("F0") + "," + p.Y.ToString("F0") + Environment.NewLine +
                 "Coord: " + c.X.ToString("F4") + "," + c.Y.ToString("F4") + Environment.NewLine +
-                "Map: " + m.X.ToString("F0") + "," + m.Y.ToString("F0") + Environment.NewLine +
+                "Map: " + mp.X.ToString("F0") + "," + mp.Y.ToString("F0") + Environment.NewLine +
                 "Lat/Lon: " + ll.ToString()
            );
         }
