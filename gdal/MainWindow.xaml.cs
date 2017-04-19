@@ -5,6 +5,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Device.Location;
 using System.Windows.Media.Imaging;
+using System.Windows.Controls;
+using System.IO;
+
+
 
 namespace PanAndZoom
 {
@@ -16,6 +20,9 @@ namespace PanAndZoom
         geoRaster raster;
         private Point origin;
         private Point start;
+
+         private System.Drawing.Bitmap bm;
+        private BitmapSource bs;
 
         string file = "G:/Sectionals/SaltLakeCitySEC94.tif";
 
@@ -38,10 +45,23 @@ namespace PanAndZoom
             this.MouseLeftButtonDown += MainWindow_MouseLeftButtonDown;
             this.MouseLeftButtonUp += MainWindow_MouseLeftButtonUp;
             this.MouseRightButtonDown += MainWindow_MouseRightButtonDown;
+            
+            this.Loaded += new RoutedEventHandler(myLoaded);
+        }
 
-            BitmapImage image = new BitmapImage(new Uri(file));
+        private void myLoaded(object sender, EventArgs e)
+        { 
 
-            //content.Source = image;
+            int w = Convert.ToInt32(canvas.ActualWidth);
+            int h = Convert.ToInt32(canvas.ActualHeight);
+
+            // Create a bitmap with 36U at center
+            bm = raster.createBitMap(w, h, new GeoCoordinate(40.4818056, -111.4288056));
+
+            bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                bm.GetHbitmap(), IntPtr.Zero, System.Windows.Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+
+            content.Source = bs;
         }
 
         private TranslateTransform GetTranslateTransform(UIElement element)
@@ -153,14 +173,16 @@ namespace PanAndZoom
                     this.TranslateXY.Text = tt.ToString();
                 }
 
-                // Transform display x,y to map x,y
-                Point mp = new Point((p.X - tt.X) * (raster.width / (canvas.ActualWidth * st.ScaleX)), 
-                        (p.Y - tt.Y) * (raster.height / (canvas.ActualWidth * st.ScaleY)));
-                this.MapXY.Text = mp.X.ToString("F0") + "," + mp.Y.ToString("F0");
+                // Transform display x,y to raster x,y
+                Point rp = new Point(
+                    ((p.X - tt.X) / st.ScaleX) + raster.xOffset,
+                    ((p.Y - tt.Y) / st.ScaleY) + raster.yOffset
+                );
+                this.RasterXY.Text = rp.X.ToString("F0") + "," + rp.Y.ToString("F0");
 
 
-                Point c = raster.px2coord(mp);
-                this.srsCoord.Text = c.X.ToString("F4") + "," + c.Y.ToString("F4");
+                Point c = raster.px2coord(rp);
+                this.SrsCoord.Text = c.X.ToString("F4") + "," + c.Y.ToString("F4");
 
                 this.Scale.Text = st.ScaleX.ToString("F1") + "," + st.ScaleY.ToString("F1");
                 this.TranslateXY.Text = tt.X.ToString("F0") + "," + tt.Y.ToString("F0");
@@ -176,18 +198,21 @@ namespace PanAndZoom
 
             Point p = e.GetPosition(border);
 
-            // Transform display pixel coordinate to map coordinates
-            Point mp = new Point((p.X - tt.X) * (raster.width / (canvas.ActualWidth * st.ScaleX)),
-                    (p.Y - tt.Y) * (raster.height / (canvas.ActualWidth * st.ScaleY)));
+            // Transform display pixel coordinate to raster coordinates
+             Point rp = new Point(
+                    ((p.X - tt.X) / st.ScaleX) + raster.xOffset,
+                    ((p.Y - tt.Y) / st.ScaleY) + raster.yOffset
+            );
+            this.RasterXY.Text = rp.X.ToString("F0") + "," + rp.Y.ToString("F0");
 
-            Point c = raster.px2coord(mp);
+            Point c = raster.px2coord(rp);
 
             GeoCoordinate ll = raster.coord2LatLon(c);
 
              MessageBox.Show(
                 "Display: " + p.X.ToString("F0") + "," + p.Y.ToString("F0") + Environment.NewLine +
-                "Coord: " + c.X.ToString("F4") + "," + c.Y.ToString("F4") + Environment.NewLine +
-                "Map: " + mp.X.ToString("F0") + "," + mp.Y.ToString("F0") + Environment.NewLine +
+                "Raster: " + rp.X.ToString("F0") + "," + rp.Y.ToString("F0") + Environment.NewLine +
+                "SRS: " + c.X.ToString("F4") + "," + c.Y.ToString("F4") + Environment.NewLine +
                 "Lat/Lon: " + ll.ToString()
            );
         }
